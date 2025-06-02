@@ -5,7 +5,7 @@ from collections import deque
 # --- 페이지 설정 ---
 st.set_page_config(page_title="자료구조: 스택과 큐", layout="wide")
 
-st.title("📚 자료구조: 스택(Stack)과 큐(Queue) 📚")  
+st.title("📚 자료구조: 스택(Stack)과 큐(Queue) 📚")
 st.markdown("스택과 큐는 컴퓨터 과학에서 데이터를 효율적으로 관리하기 위한 기본적인 자료구조입니다. 각 자료구조의 특징과 동작 방식을 시각적으로 살펴보세요.")
 
 # --- 스택 섹션 ---
@@ -47,16 +47,19 @@ def plot_stack(stack_data):
         )
         return fig
 
-    # 스택 시각화를 위한 데이터 준비
-    y_labels = [f"[{i}] {val}" for i, val in enumerate(stack_data)]
+    # 스택 시각화를 위한 데이터 준비 (수직 스택)
+    # x_values는 모든 바의 x 위치를 중앙으로 설정
+    x_values = [0.5] * len(stack_data)
+    # y_values는 바의 수직 위치 (인덱스)
     y_values = list(range(len(stack_data)))
+    # y_labels는 y축에 표시될 레이블 (예: [0] 값1, [1] 값2)
+    y_labels = [f"[{i}] {val}" for i, val in enumerate(stack_data)]
 
     fig = go.Figure(
         data=[
             go.Bar(
-                x=[1] * len(stack_data),  # 모든 바의 너비를 동일하게
-                y=y_values,
-                orientation='h',
+                x=x_values, # x축은 고정하고
+                y=y_values, # y축으로 바의 높이를 조절하여 수직 스택처럼 보이게 합니다.
                 marker_color='skyblue',
                 text=stack_data,
                 textposition='auto',
@@ -68,12 +71,12 @@ def plot_stack(stack_data):
         title_text="현재 스택 상태",
         title_x=0.5,
         height=max(300, len(stack_data) * 50 + 100), # 스택 크기에 따라 높이 조절
-        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False), # x축 레이블 숨김
         yaxis=dict(
             tickmode='array',
             tickvals=y_values,
             ticktext=y_labels,
-            autorange="reversed" # 스택처럼 위로 쌓이도록
+            autorange="reversed" # 스택처럼 위로 쌓이도록 (가장 최근 요소가 위)
         ),
         margin=dict(l=50, r=50, t=50, b=50),
         plot_bgcolor='rgba(0,0,0,0)'
