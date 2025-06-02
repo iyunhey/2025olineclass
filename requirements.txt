@@ -1,0 +1,217 @@
+import streamlit as st
+import plotly.graph_objects as go
+from collections import deque
+
+# --- 페이지 설정 ---
+st.set_page_config(page_title="자료구조: 스택과 큐", layout="wide")
+
+st.title("📚 자료구조: 스택(Stack)과 큐(Queue) 📚")
+st.markdown("스택과 큐는 컴퓨터 과학에서 데이터를 효율적으로 관리하기 위한 기본적인 자료구조입니다. 각 자료구조의 특징과 동작 방식을 시각적으로 살펴보세요.")
+
+# --- 스택 섹션 ---
+st.header("1. 스택 (Stack)")
+st.subheader("개념: LIFO (Last In, First Out)")
+st.markdown(
+    """
+    스택은 **가장 나중에 들어온 요소가 가장 먼저 나가는 (Last In, First Out - LIFO)** 구조를 가집니다.
+    마치 쌓여있는 접시 더미와 같습니다. 가장 위에 있는 접시를 먼저 꺼내야 아래에 있는 접시를 꺼낼 수 있죠.
+
+    **주요 연산:**
+    -   `push`: 스택의 맨 위에 요소를 추가합니다.
+    -   `pop`: 스택의 맨 위 요소를 제거하고 반환합니다.
+    -   `peek` (또는 `top`): 스택의 맨 위 요소를 반환하지만 제거하지는 않습니다.
+    -   `isEmpty`: 스택이 비어있는지 확인합니다.
+    """
+)
+
+# 스택 상태 관리
+if 'stack' not in st.session_state:
+    st.session_state.stack = []
+
+# 스택 시각화 함수
+def plot_stack(stack_data):
+    if not stack_data:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="스택이 비어 있습니다.",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=20, color="gray")
+        )
+        fig.update_layout(
+            height=300,
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            margin=dict(l=20, r=20, t=20, b=20),
+            plot_bgcolor='rgba(0,0,0,0)'
+        )
+        return fig
+
+    # 스택 시각화를 위한 데이터 준비
+    y_labels = [f"[{i}] {val}" for i, val in enumerate(stack_data)]
+    y_values = list(range(len(stack_data)))
+
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=[1] * len(stack_data),  # 모든 바의 너비를 동일하게
+                y=y_values,
+                orientation='h',
+                marker_color='skyblue',
+                text=stack_data,
+                textposition='auto',
+                hoverinfo='text'
+            )
+        ]
+    )
+    fig.update_layout(
+        title_text="현재 스택 상태",
+        title_x=0.5,
+        height=max(300, len(stack_data) * 50 + 100), # 스택 크기에 따라 높이 조절
+        xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        yaxis=dict(
+            tickmode='array',
+            tickvals=y_values,
+            ticktext=y_labels,
+            autorange="reversed" # 스택처럼 위로 쌓이도록
+        ),
+        margin=dict(l=50, r=50, t=50, b=50),
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+    return fig
+
+# 스택 인터페이스
+col_stack_input, col_stack_buttons = st.columns([1, 2])
+
+with col_stack_input:
+    stack_value = st.text_input("스택에 추가할 값:", key="stack_input")
+
+with col_stack_buttons:
+    st.write("") # 공간 확보
+    st.write("") # 공간 확보
+    if st.button("➕ Push (추가)", key="push_button"):
+        if stack_value:
+            st.session_state.stack.append(stack_value)
+            st.success(f"'{stack_value}'를 스택에 추가했습니다.")
+            st.session_state.stack_input = "" # 입력창 초기화
+        else:
+            st.warning("추가할 값을 입력해주세요.")
+
+    if st.button("➖ Pop (제거)", key="pop_button"):
+        if st.session_state.stack:
+            popped_value = st.session_state.stack.pop()
+            st.info(f"'{popped_value}'를 스택에서 제거했습니다.")
+        else:
+            st.error("스택이 비어 있습니다. 제거할 요소가 없습니다.")
+
+st.plotly_chart(plot_stack(st.session_state.stack), use_container_width=True)
+
+st.markdown("---")
+
+# --- 큐 섹션 ---
+st.header("2. 큐 (Queue)")
+st.subheader("개념: FIFO (First In, First Out)")
+st.markdown(
+    """
+    큐는 **가장 먼저 들어온 요소가 가장 먼저 나가는 (First In, First Out - FIFO)** 구조를 가집니다.
+    은행이나 마트의 줄과 같습니다. 먼저 줄을 선 사람이 먼저 서비스를 받죠.
+
+    **주요 연산:**
+    -   `enqueue` (또는 `offer`): 큐의 뒤쪽에 요소를 추가합니다.
+    -   `dequeue` (또는 `poll`): 큐의 앞쪽 요소를 제거하고 반환합니다.
+    -   `front` (또는 `peek`): 큐의 앞쪽 요소를 반환하지만 제거하지는 않습니다.
+    -   `rear`: 큐의 뒤쪽 요소를 반환하지만 제거하지는 않습니다.
+    -   `isEmpty`: 큐가 비어있는지 확인합니다.
+    """
+)
+
+# 큐 상태 관리
+if 'queue' not in st.session_state:
+    st.session_state.queue = deque() # deque는 큐 연산에 효율적
+
+# 큐 시각화 함수
+def plot_queue(queue_data):
+    if not queue_data:
+        fig = go.Figure()
+        fig.add_annotation(
+            text="큐가 비어 있습니다.",
+            xref="paper", yref="paper",
+            x=0.5, y=0.5, showarrow=False,
+            font=dict(size=20, color="gray")
+        )
+        fig.update_layout(
+            height=300,
+            xaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+            margin=dict(l=20, r=20, t=20, b=20),
+            plot_bgcolor='rgba(0,0,0,0)'
+        )
+        return fig
+
+    # 큐 시각화를 위한 데이터 준비
+    x_labels = [f"{val}" for val in queue_data]
+    x_values = list(range(len(queue_data)))
+
+    fig = go.Figure(
+        data=[
+            go.Bar(
+                x=x_values,
+                y=[1] * len(queue_data), # 모든 바의 높이를 동일하게
+                marker_color='lightcoral',
+                text=queue_data,
+                textposition='auto',
+                hoverinfo='text'
+            )
+        ]
+    )
+    fig.update_layout(
+        title_text="현재 큐 상태",
+        title_x=0.5,
+        height=300,
+        xaxis=dict(
+            tickmode='array',
+            tickvals=x_values,
+            ticktext=x_labels,
+            title="← Dequeue (앞) | Enqueue (뒤) →"
+        ),
+        yaxis=dict(showgrid=False, zeroline=False, showticklabels=False),
+        margin=dict(l=50, r=50, t=50, b=50),
+        plot_bgcolor='rgba(0,0,0,0)'
+    )
+    return fig
+
+# 큐 인터페이스
+col_queue_input, col_queue_buttons = st.columns([1, 2])
+
+with col_queue_input:
+    queue_value = st.text_input("큐에 추가할 값:", key="queue_input")
+
+with col_queue_buttons:
+    st.write("") # 공간 확보
+    st.write("") # 공간 확보
+    if st.button("➕ Enqueue (추가)", key="enqueue_button"):
+        if queue_value:
+            st.session_state.queue.append(queue_value)
+            st.success(f"'{queue_value}'를 큐에 추가했습니다.")
+            st.session_state.queue_input = "" # 입력창 초기화
+        else:
+            st.warning("추가할 값을 입력해주세요.")
+
+    if st.button("➖ Dequeue (제거)", key="dequeue_button"):
+        if st.session_state.queue:
+            dequeued_value = st.session_state.queue.popleft() # 큐의 앞쪽에서 제거
+            st.info(f"'{dequeued_value}'를 큐에서 제거했습니다.")
+        else:
+            st.error("큐가 비어 있습니다. 제거할 요소가 없습니다.")
+
+st.plotly_chart(plot_queue(list(st.session_state.queue)), use_container_width=True)
+
+st.markdown("---")
+st.markdown("### 💡 더 알아보기")
+st.markdown(
+    """
+    스택과 큐는 다양한 프로그래밍 문제 해결에 사용됩니다.
+    예를 들어, 웹 브라우저의 '뒤로 가기' 기능은 스택을 사용하고,
+    프린터의 인쇄 대기열은 큐를 사용합니다.
+    """
+)
