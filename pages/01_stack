@@ -5,7 +5,7 @@ from collections import deque
 # --- 페이지 설정 ---
 st.set_page_config(page_title="자료구조: 스택과 큐", layout="wide")
 
-st.title("📚 자료구조: 스택(Stack)과 큐(Queue) 📚")
+st.title("📚 자료구조: 스택(Stack)과 큐(Queue) 📚")  
 st.markdown("스택과 큐는 컴퓨터 과학에서 데이터를 효율적으로 관리하기 위한 기본적인 자료구조입니다. 각 자료구조의 특징과 동작 방식을 시각적으로 살펴보세요.")
 
 # --- 스택 섹션 ---
