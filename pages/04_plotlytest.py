@@ -41,4 +41,4 @@ df_plot = pd.DataFrame({
 fig = px.bar(
     df_plot,
     x="연령구간",
-  
+)
