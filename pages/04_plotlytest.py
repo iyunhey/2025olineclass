@@ -2,103 +2,43 @@ import streamlit as st
 import pandas as pd
 import plotly.express as px
 
-st.title("📊 인구 통계 시각화")
+# 📁 데이터 로딩
+df = pd.read_csv("data.csv", encoding="cp949")
 
-# 파일 업로드
-uploaded_file = st.file_uploader("CSV 파일을 업로드하세요 (cp949 인코딩)", type=["csv"])
-if uploaded_file:
-    # 데이터 로딩
-    try:
-        df = pd.read_csv(uploaded_file, encoding='cp949')
-    except UnicodeDecodeError:
-        st.error("📛 파일 인코딩이 cp949가 아닙니다.")
-        st.stop()
+# 📍 지역 선택
+region = st.selectbox("📍 지역을 선택하세요", df['행정구역'].unique())
 
-    df.columns = [col.strip() for col in df.columns]  # 공백 제거
-    컬럼집합 = set(df.columns)
+# ✅ 연령 구간 컬럼만 필터링
+age_cols = [col for col in df.columns if '세' in col and '계' in col]
 
-    # 1️⃣ 인구 피라미드용
-    if {'행정구역', '나이', '남자', '여자'}.issubset(컬럼집합):
-        st.subheader("🧍‍♂️🧍‍♀️ 성별/연령별 인구 피라미드")
-        지역_리스트 = df['행정구역'].unique()
-        선택_지역 = st.selectbox("지역 선택", 지역_리스트)
-        최소_나이, 최대_나이 = st.slider("연령 범위 선택", 0, 100, (0, 100), step=5)
+# 🔢 슬라이더용 연령 구간 리스트 생성
+age_labels = [col.split('_')[-1] for col in age_cols]  # ex) 0~9세, 10~19세...
 
-        필터 = (df['행정구역'] == 선택_지역) & (df['나이'] >= 최소_나이) & (df['나이'] <= 최대_나이)
-        filtered_df = df[필터].copy()
-        filtered_df['남자'] = -filtered_df['남자']  # 좌측 표현
+# 🎚️ 연령 구간 슬라이더
+selected_range = st.slider(
+    "🎚️ 시각화할 연령 구간을 선택하세요",
+    min_value=0,
+    max_value=len(age_labels)-1,
+    value=(0, len(age_labels)-1),
+    format="%d단계"
+)
 
-        fig = px.bar(
-            filtered_df,
-            x='남자',
-            y='나이',
-            orientation='h',
-            color_discrete_sequence=['#1f77b4'],
-            labels={'남자': '남성'},
-            title=f"{선택_지역} 인구 피라미드"
-        )
+# 📌 선택 지역 행 가져오기
+row = df[df['행정구역'] == region].iloc[0]
 
-        fig.add_bar(
-            x=filtered_df['여자'],
-            y=filtered_df['나이'],
-            orientation='h',
-            name='여자',
-            marker_color='#ff69b4'
-        )
+# 🧹 인구 수 전처리
+selected_labels = age_labels[selected_range[0]:selected_range[1]+1]
+selected_cols = age_cols[selected_range[0]:selected_range[1]+1]
+population = row[selected_cols].astype(str).str.replace(',', '').astype(int)
 
-        fig.update_layout(
-            barmode='overlay',
-            xaxis=dict(title='인구수', tickvals=[-10000, -5000, 0, 5000, 10000]),
-            yaxis=dict(title='나이'),
-            font=dict(family="Malgun Gothic, NanumGothic, sans-serif"),
-            height=800
-        )
-        st.plotly_chart(fig)
+# 📊 데이터프레임 구성
+df_plot = pd.DataFrame({
+    "연령구간": selected_labels,
+    "인구수": population
+})
 
-    # 2️⃣ 전체 인구 요약 시각화용
-    elif {'행정구역', '총인구수', '남자', '여자'}.issubset(컬럼집합):
-        st.subheader("🏙️ 지역별 총인구 시각화")
-
-        # 남녀 비율 계산
-        df['여성비율'] = df['여자'] / df['총인구수'] * 100
-        df['남성비율'] = df['남자'] / df['총인구수'] * 100
-
-        fig = px.bar(
-            df,
-            x='행정구역',
-            y='총인구수',
-            color='행정구역',
-            title='지역별 총인구수',
-            labels={'총인구수': '총인구'},
-            text='총인구수'
-        )
-
-        fig.update_layout(
-            font=dict(family="Malgun Gothic, NanumGothic, sans-serif"),
-            xaxis_tickangle=-45,
-            height=600
-        )
-        st.plotly_chart(fig)
-
-        st.subheader("🧮 성별 비율 비교")
-        fig2 = px.bar(
-            df.melt(id_vars='행정구역', value_vars=['남성비율', '여성비율']),
-            x='행정구역',
-            y='value',
-            color='variable',
-            barmode='group',
-            labels={'value': '비율(%)'},
-            title='지역별 남녀 인구 비율'
-        )
-        fig2.update_layout(
-            font=dict(family="Malgun Gothic, NanumGothic, sans-serif"),
-            height=600
-        )
-        st.plotly_chart(fig2)
-
-    else:
-        st.warning("⚠️ 업로드한 CSV는 지원하는 형식이 아닙니다.\n필수 컬럼 조합:\n- 피라미드용: '행정구역', '나이', '남자', '여자'\n- 요약용: '행정구역', '총인구수', '남자', '여자'")
-
-else:
-    st.info("👆 왼쪽 사이드바 또는 위에서 CSV 파일을 업로드해 주세요.")
-
+# 📈 시각화
+fig = px.bar(
+    df_plot,
+    x="연령구간",
+  
